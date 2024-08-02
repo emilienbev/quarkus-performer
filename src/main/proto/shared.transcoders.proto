@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package protocol.shared;
+option csharp_namespace = "Couchbase.Grpc.Protocol.Shared";
+option java_package = "com.couchbase.client.protocol.shared";
+option go_package = "github.com/couchbaselabs/transactions-fit-performer/protocol/shared";
+option ruby_package = "FIT::Protocol::Shared";
+option java_multiple_files = true;
+
+message LegacyTranscoder {}
+message JsonTranscoder {}
+message RawJsonTranscoder {}
+message RawStringTranscoder {}
+message RawBinaryTranscoder {}
+
+
+// All the transcoders required by https://github.com/couchbaselabs/sdk-rfcs/blob/master/rfc/0055-serializers-transcoders.md
+message Transcoder {
+  oneof transcoder {
+    LegacyTranscoder legacy = 1;
+    JsonTranscoder json = 2;
+    RawJsonTranscoder raw_json = 3;
+    RawStringTranscoder raw_string = 4;
+    RawBinaryTranscoder raw_binary = 5;
+  }
+}
