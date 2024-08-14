@@ -1,12 +1,25 @@
-package org.acme;
+/*
+ * Copyright (c) 2020 Couchbase, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package javaperformer;
 
-import javaperformer.JavaPerformer;
-import javaperformer.JavaSdkCommandExecutor;
-import javaperformer.JavaTransactionCommandExecutor;
-import javaperformer.ReactiveJavaSdkCommandExecutor;
 import com.couchbase.client.core.cnc.RequestSpan;
 import com.couchbase.client.core.cnc.events.transaction.TransactionCleanupAttemptEvent;
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.core.logging.LogRedaction;
+import com.couchbase.client.core.logging.RedactionLevel;
 import com.couchbase.client.core.transaction.cleanup.ClientRecord;
 import com.couchbase.client.core.transaction.cleanup.ClientRecordDetails;
 import com.couchbase.client.core.transaction.cleanup.TransactionsCleaner;
@@ -28,46 +41,25 @@ import com.couchbase.client.protocol.observability.SpanFinishRequest;
 import com.couchbase.client.protocol.observability.SpanFinishResponse;
 import com.couchbase.client.protocol.performer.Caps;
 import com.couchbase.client.protocol.performer.PerformerCapsFetchResponse;
-import com.couchbase.client.protocol.shared.API;
-import com.couchbase.client.protocol.shared.ClusterConnectionCloseRequest;
-import com.couchbase.client.protocol.shared.ClusterConnectionCloseResponse;
-import com.couchbase.client.protocol.shared.ClusterConnectionCreateRequest;
-import com.couchbase.client.protocol.shared.ClusterConnectionCreateResponse;
-import com.couchbase.client.protocol.shared.Collection;
-import com.couchbase.client.protocol.shared.DisconnectConnectionsRequest;
-import com.couchbase.client.protocol.shared.DisconnectConnectionsResponse;
-import com.couchbase.client.protocol.shared.EchoRequest;
-import com.couchbase.client.protocol.shared.EchoResponse;
-import com.couchbase.client.protocol.transactions.CleanupSet;
-import com.couchbase.client.protocol.transactions.CleanupSetFetchRequest;
-import com.couchbase.client.protocol.transactions.CleanupSetFetchResponse;
-import com.couchbase.client.protocol.transactions.ClientRecordProcessRequest;
-import com.couchbase.client.protocol.transactions.ClientRecordProcessResponse;
-import com.couchbase.client.protocol.transactions.TransactionCleanupAttempt;
-import com.couchbase.client.protocol.transactions.TransactionCleanupRequest;
-import com.couchbase.client.protocol.transactions.TransactionCreateRequest;
-import com.couchbase.client.protocol.transactions.TransactionResult;
-import com.couchbase.client.protocol.transactions.TransactionSingleQueryRequest;
-import com.couchbase.client.protocol.transactions.TransactionSingleQueryResponse;
-import com.couchbase.client.protocol.transactions.TransactionStreamDriverToPerformer;
-import com.couchbase.client.protocol.transactions.TransactionStreamPerformerToDriver;
+import com.couchbase.client.protocol.shared.*;
+import com.couchbase.client.protocol.transactions.*;
 import javaperformer.transactions.SingleQueryTransactionExecutor;
 import javaperformer.twoway.TwoWayTransactionBlocking;
 import javaperformer.twoway.TwoWayTransactionMarshaller;
 import javaperformer.twoway.TwoWayTransactionReactive;
-import javaperformer.utils.Capabilities;
-import javaperformer.utils.ClusterConnection;
-import javaperformer.utils.HooksUtil;
-import javaperformer.utils.OptionsUtil;
-import javaperformer.utils.ResultsUtil;
+import javaperformer.utils.*;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
-import io.quarkus.grpc.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Hooks;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -76,9 +68,10 @@ import java.util.stream.Collectors;
 
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
+import static extras.internal.TransactionsSupportedExtensionsUtil.SUPPORTED;
+// [end]
 
-@GrpcService
-public class QuarkusPerformer extends CorePerformer {
+public class JavaPerformer extends CorePerformer {
     private static final Logger logger = LoggerFactory.getLogger(JavaPerformer.class);
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, RequestSpan> spans = new ConcurrentHashMap<>();
@@ -477,6 +470,61 @@ public class QuarkusPerformer extends CorePerformer {
         responseObserver.onNext(SpanFinishResponse.getDefaultInstance());
         responseObserver.onCompleted();
     }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        int port = 8060;
+
+        // Better reactor stack traces for low cost
+        // Unfortunately we cannot have this without pulling in reactor-tools, which can then pill in an incompatible
+        // reactor-core when we are building old versions of the SDK.
+        // ReactorDebugAgent.init();
+
+        // Control ultra-verbose logging
+        System.setProperty("com.couchbase.transactions.debug.lock", "true");
+        System.setProperty("com.couchbase.transactions.debug.monoBridge", "false");
+
+        // Setup global error handlers
+        Hooks.onErrorDropped(err -> {
+            // We intentionally don't set globalError here.
+            // In a reactive chain, if one operation fails, any parallel operations are cancelled.
+            // If those operations subsuquently hit an error, it has nowhere to go (as the original
+            // chain has already had an error raised on it), and so it's raised on the global error
+            // handle (e.g. here).  Though unfortunate, this is standard reactor UX, and shouldn't
+            // be regarded as a test failure.
+            logger.info("Async hook drop (probably fine, will happen if multiple concurrent operations in a reactor chain fail): {}\n\t{}",
+                    err.toString(), Arrays.stream(err.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n\t")));
+        });
+
+        // Blockhound is disabled as it causes an immediate runtime error on Jenkins
+//        BlockHound
+//                .builder()
+//                .blockingMethodCallback(blockingMethod -> {
+//                    globalError.set("Blocking method detected: " + blockingMethod);
+//                })
+//                .install();
+
+        //Need to send parameters in format : port=8060 version=1.1.0 loglevel=all:Info
+        for(String parameter : args) {
+            switch (parameter.split("=")[0]) {
+                case "port":
+                    port= Integer.parseInt(parameter.split("=")[1]);
+                    break;
+                default:
+                    logger.warn("Undefined input: {}. Ignoring it",parameter);
+            }
+        }
+
+        // Force that log redaction has been enabled
+        LogRedaction.setRedactionLevel(RedactionLevel.PARTIAL);
+
+        Server server = ServerBuilder.forPort(port)
+                .addService(new JavaPerformer())
+                .build();
+        server.start();
+        logger.info("Server Started at {}", server.getPort());
+        server.awaitTermination();
+    }
+
 
     public static ClusterConnection getClusterConnection(@Nullable String clusterConnectionId) {
         return clusterConnections.get(clusterConnectionId);
