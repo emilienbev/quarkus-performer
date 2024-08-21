@@ -24,6 +24,7 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.protocol.shared.DocLocation;
 import com.couchbase.client.protocol.transactions.DocId;
+import jakarta.inject.Inject;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -33,6 +34,9 @@ import java.util.List;
 
 public class ClusterConnection {
     private final Cluster cluster;
+
+    private boolean isQuarkus;
+
     @Nullable private final ClusterEnvironment config;
     public final String username;
     // Commands to run when this ClusterConnection is being closed.  Allows closing other related resources that have
@@ -57,6 +61,14 @@ public class ClusterConnection {
         }
 
         this.cluster = Cluster.connect(hostname, co);
+    }
+
+    public ClusterConnection(ArrayList<Runnable> onClusterConnectionClose, Cluster qCluster)  {
+        this.username = "Administrator";
+        this.onClusterConnectionClose = onClusterConnectionClose;
+        this.config = null;
+        this.cluster = qCluster;
+        this.isQuarkus = true;
     }
 
     public Cluster cluster(){
@@ -103,11 +115,13 @@ public class ClusterConnection {
     }
 
     public void close() {
-        cluster.disconnect();
-        if (config != null) {
-            config.shutdown();
+        if (!isQuarkus){
+            cluster.disconnect();
+            if (config != null) {
+                config.shutdown();
+            }
+            onClusterConnectionClose.forEach(Runnable::run);
         }
-        onClusterConnectionClose.forEach(Runnable::run);
     }
 
     public void waitUntilReady(CollectionIdentifier collection) {

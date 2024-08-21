@@ -2,9 +2,11 @@ package org.acme;
 
 import com.couchbase.client.core.logging.LogRedaction;
 import com.couchbase.client.core.logging.RedactionLevel;
+import com.couchbase.client.java.Cluster;
 import core.metrics.MetricsReporter;
 import core.perf.*;
 import io.smallrye.common.annotation.Blocking;
+import jakarta.inject.Inject;
 import javaperformer.JavaPerformer;
 import javaperformer.JavaSdkCommandExecutor;
 import javaperformer.JavaTransactionCommandExecutor;
@@ -87,6 +89,9 @@ public class QuarkusPerformer extends CorePerformer {
     private static final Logger logger = LoggerFactory.getLogger(JavaPerformer.class);
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, RequestSpan> spans = new ConcurrentHashMap<>();
+
+    @Inject
+    Cluster quarkusCluster;
 
     static {
         LogRedaction.setRedactionLevel(RedactionLevel.PARTIAL);
@@ -189,11 +194,25 @@ public class QuarkusPerformer extends CorePerformer {
 
             var clusterEnvironment = OptionsUtil.convertClusterConfig(request, getCluster, onClusterConnectionClose);
 
-            var connection = new ClusterConnection(request.getClusterHostname(),
-                    request.getClusterUsername(),
-                    request.getClusterPassword(),
-                    clusterEnvironment,
-                    onClusterConnectionClose);
+            ClusterConnection connection;
+            if (clusterConnectionId.startsWith("defaultClusterConnection_")){
+                connection = new ClusterConnection(onClusterConnectionClose, quarkusCluster);
+                try {
+                    var result = connection.cluster().query("select \"foo\" as bar");
+                    logger.info("TEST Query Result from Quarkus Cluster" + result.rowsAsObject().get(0).toString());
+
+                } catch (Exception e){
+                    logger.info("ERROR testing Quarkus Cluster" + e.toString());
+                    logger.info("Trying with other Inject:");
+                }
+            } else {
+                connection = new ClusterConnection(request.getClusterHostname(),
+                        request.getClusterUsername(),
+                        request.getClusterPassword(),
+                        clusterEnvironment,
+                        onClusterConnectionClose);
+            }
+
             clusterConnections.put(clusterConnectionId, connection);
             logger.info("Created cluster connection {} for user {}, now have {}",
                     clusterConnectionId, request.getClusterUsername(), clusterConnections.size());
