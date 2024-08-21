@@ -42,7 +42,7 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 
 abstract public class CorePerformer extends PerformerServiceGrpc.PerformerServiceImplBase {
-    private final StreamerOwner streamerOwner = new StreamerOwner();
+    protected final StreamerOwner streamerOwner = new StreamerOwner();
 
     public CorePerformer() {
         streamerOwner.start();

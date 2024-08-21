@@ -1,5 +1,10 @@
 package org.acme;
 
+import com.couchbase.client.core.logging.LogRedaction;
+import com.couchbase.client.core.logging.RedactionLevel;
+import core.metrics.MetricsReporter;
+import core.perf.*;
+import io.smallrye.common.annotation.Blocking;
 import javaperformer.JavaPerformer;
 import javaperformer.JavaSdkCommandExecutor;
 import javaperformer.JavaTransactionCommandExecutor;
@@ -20,7 +25,6 @@ import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import core.CorePerformer;
 import core.commands.SdkCommandExecutor;
 import core.commands.TransactionCommandExecutor;
-import core.perf.Counters;
 import core.util.VersionUtil;
 import com.couchbase.client.protocol.observability.SpanCreateRequest;
 import com.couchbase.client.protocol.observability.SpanCreateResponse;
@@ -69,6 +73,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -82,6 +87,10 @@ public class QuarkusPerformer extends CorePerformer {
     private static final Logger logger = LoggerFactory.getLogger(JavaPerformer.class);
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, RequestSpan> spans = new ConcurrentHashMap<>();
+
+    static {
+        LogRedaction.setRedactionLevel(RedactionLevel.PARTIAL);
+    }
 
     // Allows capturing various errors so we can notify the driver of problems.
     public static AtomicReference<String> globalError = new AtomicReference<>();
@@ -481,5 +490,12 @@ public class QuarkusPerformer extends CorePerformer {
 
     public static ClusterConnection getClusterConnection(@Nullable String clusterConnectionId) {
         return clusterConnections.get(clusterConnectionId);
+    }
+
+    @Override
+    @Blocking
+    public void run(com.couchbase.client.protocol.run.Request request,
+                    StreamObserver<com.couchbase.client.protocol.run.Result> responseObserver) {
+    super.run(request, responseObserver);
     }
 }
