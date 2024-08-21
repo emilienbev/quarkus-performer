@@ -24,7 +24,6 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.protocol.shared.DocLocation;
 import com.couchbase.client.protocol.transactions.DocId;
-import jakarta.inject.Inject;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
