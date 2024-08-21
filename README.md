@@ -1,27 +1,60 @@
 # quarkus-performer
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
-
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+This project is a proof of concept to "port" over our Java FIT Performer to use the Couchbase Quarkus extension.
+It starts a gRPC server which executes FIT Driver (gRPC client) requests against a Couchbase server.
 
 ## Running the tests
-The current minimal test assumes you have a Couchbase server running, with a bucket named "default".
+You'll need:
+- quarkus-performer (FIT Performer, a gRPC Server)
+- transaction-fit-performer (FIT Driver, a gRPC Client)
+- Couchbase Server (Local or Capella)
+- Mandrel 24.0.2.r22 or Graal 22.0.2 (or latest for both)
 
-You can deploy a cluster locally with Docker using:
+> Using [SDKMAN!](https://sdkman.io/) is recommended to install and manage different JDKs.
+
+### Step 1
+Start a Couchbase Server
+
+With Docker:
 ```shell script
 docker run -d --name MyCouchbaseCluster -p 8091-8097:8091-8097 -p 11210:11210 couchbase:latest
 ```
-and then heading to http://localhost:8091/ui/index.html to complete the initial setup.
+Head to https://localhost:8091 to finish setting up your cluster.
 
-
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
+### Step 2
+Clone this repository and `cd` into it:
 ```shell script
-./mvnw compile quarkus:dev
+git clone git@github.com:emilienbev/quarkus-performer.git
+cd quarkus-performer
+```
+To install/use Mandrel, do:
+```shell script
+sdk install java 24.0.2.r22-mandrel
+sdk use java 24.0.2.r22-mandrel    
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+Open `application.properties` in `quarkus-performer/src/main/resources` and modify the credentials to the ones you chose when setting up your Cluster (or change the connection string if your Cluster is remote).
+
+Still with `quarkus-performer` open in a terminal, run:
+```shell script
+mvn clean install -Dnative -DskipTests
+```
+Once it is compiled run the performer:
+```shell script
+cd cd target/quarkus-couchbase-demo-1.0.0-SNAPSHOT-native-image-source-jar
+java -jar quarkus-couchbase-demo-1.0.0-SNAPSHOT-runner.jar
+```
+
+### Step 3
+Clone transactions-fit-performer:
+```shell script
+git clone git clone git@github.com:couchbaselabs/transactions-fit-performer.git
+```
+Open the project in another IDE window and follow the README.md to configure FITConfirguration.json.
+
+Right click and run any test in `test-driver/src/test/java/com/couchbase`.
+
+# Other Infos 
 
 ## Packaging and running the application
 
@@ -56,15 +89,3 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 You can then execute your native executable with: `./target/quarkus-couchbase-demo-1.0.0-SNAPSHOT-runner`
 
 If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-## Related Guides
-
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-
-## Provided Code
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
