@@ -146,7 +146,8 @@ public class QuarkusPerformer extends CorePerformer {
         response.addPerformerCaps(Caps.CLUSTER_CONFIG_INSECURE);
         // Some observability options blocks changed name here
         // [if:3.2.0]
-        response.addPerformerCaps(Caps.OBSERVABILITY_1);
+        //TODO: Marker for removed otel support
+//        response.addPerformerCaps(Caps.OBSERVABILITY_1);
         // [end]
         response.addPerformerCaps(Caps.TIMING_ON_FAILED_OPS);
         response.setPerformerUserAgent("java-sdk");
