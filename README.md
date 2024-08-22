@@ -3,6 +3,9 @@
 This project is a proof of concept to "port" over our Java FIT Performer to use the Couchbase Quarkus extension.
 It starts a gRPC server which executes FIT Driver (gRPC client) requests against a Couchbase server.
 
+> As of August 2024, the official Quarkus Couchbase Extension is not native-compatible and will not work with this project.
+> This project uses an [experimental fork](https://github.com/emilienbev/quarkus-embev) which adds native compilation compatibility.  
+
 ## Running the tests
 You'll need:
 - quarkus-performer (FIT Performer, a gRPC Server)
@@ -32,8 +35,11 @@ To install/use Mandrel, do:
 sdk install java 24.0.2.r22-mandrel
 sdk use java 24.0.2.r22-mandrel    
 ```
+> Note that `sdk use java {version}` will use that version in your current shell. Opening a new terminal session will use the default Java version, which you can specify with `sdk default java {version}`.   
 
 Open `application.properties` in `quarkus-performer/src/main/resources` and modify the credentials to the ones you chose when setting up your Cluster (or change the connection string if your Cluster is remote).
+
+> Cluster configurations in `application.properties` are set at build-time and cannot be modified at run-time. Changing them will require re-compiling. 
 
 Still with `quarkus-performer` open in a terminal, run:
 ```shell script
