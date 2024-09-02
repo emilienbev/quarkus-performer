@@ -49,6 +49,7 @@ public abstract class SdkCommandExecutor extends Executor {
         try {
             performOperation(command, perRun);
         } catch (RuntimeException err) {
+            logger.info("BEV ERRROR: {}", err.toString());
             if (err instanceof UnsupportedOperationException) {
                 // The perf test can easily create hundreds of thousands of these errors per second, creating gigabytes of logging very quickly.
                 // So only log the first example of each error.

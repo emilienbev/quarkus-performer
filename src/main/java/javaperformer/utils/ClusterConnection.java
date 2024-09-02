@@ -34,7 +34,7 @@ import java.util.List;
 public class ClusterConnection {
     private final Cluster cluster;
 
-    private boolean isQuarkus;
+    private boolean isQuarkus = false;
 
     @Nullable private final ClusterEnvironment config;
     public final String username;

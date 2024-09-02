@@ -3,7 +3,6 @@ package org.acme;
 import com.couchbase.client.core.logging.LogRedaction;
 import com.couchbase.client.core.logging.RedactionLevel;
 import com.couchbase.client.java.Cluster;
-import core.metrics.MetricsReporter;
 import core.perf.*;
 import io.smallrye.common.annotation.Blocking;
 import jakarta.inject.Inject;
@@ -75,7 +74,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -90,8 +88,8 @@ public class QuarkusPerformer extends CorePerformer {
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, RequestSpan> spans = new ConcurrentHashMap<>();
 
-    @Inject
-    Cluster quarkusCluster;
+//    @Inject
+//    Cluster quarkusCluster;
 
     static {
         LogRedaction.setRedactionLevel(RedactionLevel.PARTIAL);
@@ -101,6 +99,7 @@ public class QuarkusPerformer extends CorePerformer {
     public static AtomicReference<String> globalError = new AtomicReference<>();
 
     @Override
+    @Blocking
     protected SdkCommandExecutor executor(com.couchbase.client.protocol.run.Workloads workloads, Counters counters, API api) {
         var connection = clusterConnections.get(workloads.getClusterConnectionId());
         return api == API.DEFAULT
@@ -109,6 +108,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     protected TransactionCommandExecutor transactionsExecutor(com.couchbase.client.protocol.run.Workloads workloads, Counters counters) {
         // [if:3.3.0]
         var connection = clusterConnections.get(workloads.getClusterConnectionId());
@@ -119,6 +119,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     protected void customisePerformerCaps(PerformerCapsFetchResponse.Builder response) {
         response.addAllSdkImplementationCaps(Capabilities.sdkImplementationCaps());
         var sdkVersion = VersionUtil.introspectSDKVersionJava();
@@ -168,6 +169,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     public void clusterConnectionCreate(ClusterConnectionCreateRequest request,
                                         StreamObserver<ClusterConnectionCreateResponse> responseObserver) {
         try {
@@ -195,23 +197,29 @@ public class QuarkusPerformer extends CorePerformer {
             var clusterEnvironment = OptionsUtil.convertClusterConfig(request, getCluster, onClusterConnectionClose);
 
             ClusterConnection connection;
-            if (clusterConnectionId.startsWith("defaultClusterConnection_")){
-                connection = new ClusterConnection(onClusterConnectionClose, quarkusCluster);
-                try {
-                    var result = connection.cluster().query("select \"foo\" as bar");
-                    logger.info("TEST Query Result from Quarkus Cluster" + result.rowsAsObject().get(0).toString());
+//            if (clusterConnectionId.startsWith("defaultClusterConnection_")){
+////                TODO: Some Transactions tests need to specify cluster configs for tests to pass, so the quarkus cluster isn't a good diea here.
+//                connection = new ClusterConnection(onClusterConnectionClose, quarkusCluster);
+//                try {
+//                    var result = connection.cluster().query("select \"foo\" as bar");
+//                    logger.info("TEST Query Result from Quarkus Cluster" + result.rowsAsObject().get(0).toString());
+//
+//                } catch (Exception e){
+//                    logger.info("ERROR testing Quarkus Cluster" + e.toString());
+//                }
+//            } else {
+//                connection = new ClusterConnection(request.getClusterHostname(),
+//                        request.getClusterUsername(),
+//                        request.getClusterPassword(),
+//                        clusterEnvironment,
+//                        onClusterConnectionClose);
+//            }
 
-                } catch (Exception e){
-                    logger.info("ERROR testing Quarkus Cluster" + e.toString());
-                    logger.info("Trying with other Inject:");
-                }
-            } else {
-                connection = new ClusterConnection(request.getClusterHostname(),
-                        request.getClusterUsername(),
-                        request.getClusterPassword(),
-                        clusterEnvironment,
-                        onClusterConnectionClose);
-            }
+            connection = new ClusterConnection(request.getClusterHostname(),
+                    request.getClusterUsername(),
+                    request.getClusterPassword(),
+                    clusterEnvironment,
+                    onClusterConnectionClose);
 
             clusterConnections.put(clusterConnectionId, connection);
             logger.info("Created cluster connection {} for user {}, now have {}",
@@ -231,6 +239,8 @@ public class QuarkusPerformer extends CorePerformer {
         }
     }
 
+    @Override
+    @Blocking
     public void clusterConnectionClose(ClusterConnectionCloseRequest request,
                                        StreamObserver<ClusterConnectionCloseResponse> responseObserver) {
         var cc = clusterConnections.get(request.getClusterConnectionId());
@@ -244,6 +254,7 @@ public class QuarkusPerformer extends CorePerformer {
 
     // [if:3.3.0]
     @Override
+    @Blocking
     public void transactionCreate(TransactionCreateRequest request,
                                   StreamObserver<TransactionResult> responseObserver) {
         try {
@@ -271,6 +282,7 @@ public class QuarkusPerformer extends CorePerformer {
     // [end]
 
     @Override
+    @Blocking
     public  void echo(EchoRequest request , StreamObserver<EchoResponse> responseObserver){
         try {
             logger.info("================ {} : {} ================ ", request.getTestName(), request.getMessage());
@@ -283,6 +295,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     public void disconnectConnections(DisconnectConnectionsRequest request, StreamObserver<DisconnectConnectionsResponse> responseObserver) {
         try {
             logger.info("Closing all {} connections from performer to cluster", clusterConnections.size());
@@ -300,6 +313,7 @@ public class QuarkusPerformer extends CorePerformer {
 
     // [if:3.3.0]
     @Override
+    @Blocking
     public StreamObserver<TransactionStreamDriverToPerformer> transactionStream(
             StreamObserver<TransactionStreamPerformerToDriver> toTest) {
         var marshaller = new TwoWayTransactionMarshaller(clusterConnections, spans);
@@ -314,6 +328,7 @@ public class QuarkusPerformer extends CorePerformer {
 
     // [if:3.3.0]
     @Override
+    @Blocking
     public void transactionCleanup(TransactionCleanupRequest request,
                                    StreamObserver<TransactionCleanupAttempt> responseObserver) {
         try {
@@ -373,6 +388,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     public void clientRecordProcess(ClientRecordProcessRequest request,
                                     StreamObserver<ClientRecordProcessResponse> responseObserver) {
         try {
@@ -424,6 +440,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     public void transactionSingleQuery(TransactionSingleQueryRequest request,
                                        StreamObserver<TransactionSingleQueryResponse> responseObserver) {
         try {
@@ -445,6 +462,7 @@ public class QuarkusPerformer extends CorePerformer {
 
     public void cleanupSetFetch(CleanupSetFetchRequest request, StreamObserver<CleanupSetFetchResponse> responseObserver) {
         try {
+            logger.info("BEV cleanupSetFetch() called");
             var connection = getClusterConnection(request.getClusterConnectionId());
 
             var cleanupSet = connection.core().transactionsCleanup().cleanupSet().stream()
@@ -468,6 +486,7 @@ public class QuarkusPerformer extends CorePerformer {
     // [end]
 
     @Override
+    @Blocking
     public void spanCreate(SpanCreateRequest request, StreamObserver<SpanCreateResponse> responseObserver) {
         var parent = request.hasParentSpanId()
                 ? spans.get(request.getParentSpanId())
@@ -498,6 +517,7 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     @Override
+    @Blocking
     public void spanFinish(SpanFinishRequest request, StreamObserver<SpanFinishResponse> responseObserver) {
         // [if:3.1.6]
         spans.get(request.getId()).end();
@@ -508,6 +528,10 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     public static ClusterConnection getClusterConnection(@Nullable String clusterConnectionId) {
+        //TODO: Quarkus cluster custom
+//        if (clusterConnectionId.startsWith("default")){
+//            logger.info("Using the Default ClusterConnection, meaning Quarkus-Injected Cluster.");
+//        }
         return clusterConnections.get(clusterConnectionId);
     }
 

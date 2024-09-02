@@ -164,7 +164,7 @@ public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareReque
 //      var grpcTelemetry =
 //        GrpcTelemetry.create(openTelemetry);
 //      com.couchbase.client.core.deps.io.grpc.ClientInterceptor interceptor = grpcTelemetry.newClientInterceptor();
-
+//
 //      builder.intercept(interceptor);
     }
   }

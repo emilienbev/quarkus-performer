@@ -134,7 +134,7 @@ public class HooksUtil {
                             }
 
                             action = coll.reactive().upsert(docId, content,
-                                    UpsertOptions.upsertOptions().transcoder(RawJsonTranscoder.INSTANCE))
+                                            UpsertOptions.upsertOptions().transcoder(RawJsonTranscoder.INSTANCE))
                                     .doOnSubscribe(v -> logger.info("Executing hook to mutate doc {} with" +
                                             " content {}", docId, content))
                                     .thenReturn(0);
@@ -155,13 +155,13 @@ public class HooksUtil {
                 case BLOCK:
                     Duration blockFor = Duration.ofMillis(Integer.parseInt(hook.getHookActionParam1()));
                     action = Mono.fromRunnable(() -> {
-                        ctx.logger().info(ctx.attemptId(), "performer: starting blocking wait of " + hook.getHookActionValue() + "millis");
-                    })
+                                ctx.logger().info(ctx.attemptId(), "performer: starting blocking wait of " + hook.getHookActionValue() + "millis");
+                            })
                             .then(Mono.delay(blockFor))
                             .thenReturn((Object) 1);
-                            // .publishOn(SchedulerUtil.scheduler) // don't use default scheduler (parallel) as triggers a driver validation error
-                            // But, not available in older versions, so simply don't publish the message
-                            // .doOnNext(v -> ctx.logger().info(ctx.attemptId(), "performer: finished delay"));
+                    // .publishOn(SchedulerUtil.scheduler) // don't use default scheduler (parallel) as triggers a driver validation error
+                    // But, not available in older versions, so simply don't publish the message
+                    // .doOnNext(v -> ctx.logger().info(ctx.attemptId(), "performer: finished delay"));
                     break;
                 default:
                     throw new InternalPerformerFailure(
@@ -248,10 +248,9 @@ public class HooksUtil {
 
                 case WHILE_NOT_EXPIRED: {
                     out = Mono.defer(() -> {
-                        //TODO: Hack
-                        boolean hasExpired = false;
-                        
-                        logger.info("Evaluating whether to execute WHILE_NOT_EXPIRED hook at {}, hasExpired={}", 
+                        boolean hasExpired = ExpiryUtil.hasExpired(ctx, "hook-check", Optional.empty());
+
+                        logger.info("Evaluating whether to execute WHILE_NOT_EXPIRED hook at {}, hasExpired={}",
                                 hook.getHookPoint(), hasExpired);
 
                         return hasExpired ? Mono.just(1) : action;
@@ -261,8 +260,7 @@ public class HooksUtil {
 
                 case WHILE_EXPIRED: {
                     out = Mono.defer(() -> {
-                        //TODO: Hack
-                        boolean hasExpired = false;
+                        boolean hasExpired = ExpiryUtil.hasExpired(ctx, "hook-check", Optional.empty());
 
                         logger.info("Evaluating whether to execute WHILE_EXPIRED hook at {}, hasExpired={}",
                                 hook.getHookPoint(), hasExpired);
@@ -481,7 +479,7 @@ public class HooksUtil {
                                         }
                                         break;
                                     }
-                                    
+
                                     case EQUALS: {
                                         out = stage.equals(hook.getHookConditionParam2());
                                         if (out) {
