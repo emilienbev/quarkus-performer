@@ -68,6 +68,7 @@ import javaperformer.utils.ResultsUtil;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.quarkus.grpc.GrpcService;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,8 +89,8 @@ public class QuarkusPerformer extends CorePerformer {
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, RequestSpan> spans = new ConcurrentHashMap<>();
 
-//    @Inject
-//    Cluster quarkusCluster;
+    @Inject
+    Cluster quarkusCluster;
 
     static {
         LogRedaction.setRedactionLevel(RedactionLevel.PARTIAL);
@@ -197,29 +198,19 @@ public class QuarkusPerformer extends CorePerformer {
             var clusterEnvironment = OptionsUtil.convertClusterConfig(request, getCluster, onClusterConnectionClose);
 
             ClusterConnection connection;
-//            if (clusterConnectionId.startsWith("defaultClusterConnection_")){
-////                TODO: Some Transactions tests need to specify cluster configs for tests to pass, so the quarkus cluster isn't a good diea here.
-//                connection = new ClusterConnection(onClusterConnectionClose, quarkusCluster);
-//                try {
-//                    var result = connection.cluster().query("select \"foo\" as bar");
-//                    logger.info("TEST Query Result from Quarkus Cluster" + result.rowsAsObject().get(0).toString());
-//
-//                } catch (Exception e){
-//                    logger.info("ERROR testing Quarkus Cluster" + e.toString());
-//                }
-//            } else {
-//                connection = new ClusterConnection(request.getClusterHostname(),
-//                        request.getClusterUsername(),
-//                        request.getClusterPassword(),
-//                        clusterEnvironment,
-//                        onClusterConnectionClose);
-//            }
+            //TODO: Try to access config
+            var qlusterEnabled = ConfigProvider.getConfig().getValue("quarformer.enableQluster", boolean.class);
 
-            connection = new ClusterConnection(request.getClusterHostname(),
-                    request.getClusterUsername(),
-                    request.getClusterPassword(),
-                    clusterEnvironment,
-                    onClusterConnectionClose);
+            if (qlusterEnabled && clusterConnectionId.startsWith("defaultClusterConnection_")){
+                logger.info("Using Quarkus Cluster for defaultConnections.");
+                connection = new ClusterConnection(onClusterConnectionClose, quarkusCluster);
+            } else {
+                connection = new ClusterConnection(request.getClusterHostname(),
+                        request.getClusterUsername(),
+                        request.getClusterPassword(),
+                        clusterEnvironment,
+                        onClusterConnectionClose);
+            }
 
             clusterConnections.put(clusterConnectionId, connection);
             logger.info("Created cluster connection {} for user {}, now have {}",
@@ -491,6 +482,9 @@ public class QuarkusPerformer extends CorePerformer {
         var parent = request.hasParentSpanId()
                 ? spans.get(request.getParentSpanId())
                 : null;
+        //TODO: Remove this
+        logger.info("spanCreate with parentSpanId = {}", parent);
+
         var span = getClusterConnection(request.getClusterConnectionId())
                 .cluster()
                 .environment()
@@ -511,6 +505,9 @@ public class QuarkusPerformer extends CorePerformer {
             else throw new UnsupportedOperationException();
         });
         // [end]
+
+        //Todo: Remove this
+        logger.info("Putting entry into spans with key : {} and value : {}", request.getId(), span);
         spans.put(request.getId(), span);
         responseObserver.onNext(SpanCreateResponse.getDefaultInstance());
         responseObserver.onCompleted();

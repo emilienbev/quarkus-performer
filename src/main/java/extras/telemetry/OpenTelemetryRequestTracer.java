@@ -16,11 +16,11 @@
 
 package extras.telemetry;
 
+import io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetry;
 import com.couchbase.client.core.cnc.RequestSpan;
 import com.couchbase.client.core.cnc.RequestTracer;
 import com.couchbase.client.core.env.CoreEnvironment;
 import com.couchbase.client.core.error.TracerException;
-import com.couchbase.client.core.protostellar.GrpcAwareRequestTracer;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.Context;
@@ -40,7 +40,7 @@ import java.util.jar.Manifest;
  * Wraps the OpenTelemetry tracer so it is suitable to be passed in into the couchbase environment and picked up
  * by the rest of the SDK as a result.
  */
-public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareRequestTracer {
+public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareRequestTracer2 {
 
   public static final String INSTRUMENTATION_NAME = "com.couchbase.client.jvm";
 
@@ -159,13 +159,13 @@ public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareReque
   }
 
   @Override
-  public void registerGrpc(com.couchbase.client.core.deps.io.grpc.ManagedChannelBuilder<?> builder) {
+  public void registerGrpc(io.grpc.ManagedChannelBuilder<?> builder) {
     if (openTelemetry != null) {
-//      var grpcTelemetry =
-//        GrpcTelemetry.create(openTelemetry);
-//      com.couchbase.client.core.deps.io.grpc.ClientInterceptor interceptor = grpcTelemetry.newClientInterceptor();
-//
-//      builder.intercept(interceptor);
+      var grpcTelemetry =
+        GrpcTelemetry.create(openTelemetry);
+      io.grpc.ClientInterceptor interceptor = grpcTelemetry.newClientInterceptor();
+
+      builder.intercept(interceptor);
     }
   }
 

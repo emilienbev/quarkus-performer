@@ -31,6 +31,7 @@ import com.couchbase.client.protocol.transactions.DocId;
 import com.couchbase.client.protocol.transactions.ExternalException;
 import com.couchbase.client.protocol.transactions.TransactionException;
 import com.couchbase.client.protocol.transactions.TransactionResult;
+import org.acme.QuarkusPerformer;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -83,7 +84,7 @@ public class ResultsUtil {
                     response.addLog(l.toString()));
         }
 
-        String globalError = JavaPerformer.globalError.getAndSet(null);
+        String globalError = QuarkusPerformer.globalError.getAndSet(null);
         if (globalError != null) {
             response.setPerformerSpecificValidation(globalError);
         }
