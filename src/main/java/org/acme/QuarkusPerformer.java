@@ -162,8 +162,7 @@ public class QuarkusPerformer extends CorePerformer {
         response.addPerformerCaps(Caps.CLUSTER_CONFIG_INSECURE);
         // Some observability options blocks changed name here
         // [if:3.2.0]
-        //TODO: Marker for removed otel support
-//        response.addPerformerCaps(Caps.OBSERVABILITY_1);
+        response.addPerformerCaps(Caps.OBSERVABILITY_1);
         // [end]
         response.addPerformerCaps(Caps.TIMING_ON_FAILED_OPS);
         response.setPerformerUserAgent("java-sdk");
@@ -198,7 +197,7 @@ public class QuarkusPerformer extends CorePerformer {
             var clusterEnvironment = OptionsUtil.convertClusterConfig(request, getCluster, onClusterConnectionClose);
 
             ClusterConnection connection;
-            //TODO: Try to access config
+            //Marker: Access config
             var qlusterEnabled = ConfigProvider.getConfig().getValue("quarformer.enableQluster", boolean.class);
 
             if (qlusterEnabled && clusterConnectionId.startsWith("defaultClusterConnection_")){
@@ -482,8 +481,6 @@ public class QuarkusPerformer extends CorePerformer {
         var parent = request.hasParentSpanId()
                 ? spans.get(request.getParentSpanId())
                 : null;
-        //TODO: Remove this
-        logger.info("spanCreate with parentSpanId = {}", parent);
 
         var span = getClusterConnection(request.getClusterConnectionId())
                 .cluster()
@@ -505,9 +502,6 @@ public class QuarkusPerformer extends CorePerformer {
             else throw new UnsupportedOperationException();
         });
         // [end]
-
-        //Todo: Remove this
-        logger.info("Putting entry into spans with key : {} and value : {}", request.getId(), span);
         spans.put(request.getId(), span);
         responseObserver.onNext(SpanCreateResponse.getDefaultInstance());
         responseObserver.onCompleted();
@@ -525,10 +519,6 @@ public class QuarkusPerformer extends CorePerformer {
     }
 
     public static ClusterConnection getClusterConnection(@Nullable String clusterConnectionId) {
-        //TODO: Quarkus cluster custom
-//        if (clusterConnectionId.startsWith("default")){
-//            logger.info("Using the Default ClusterConnection, meaning Quarkus-Injected Cluster.");
-//        }
         return clusterConnections.get(clusterConnectionId);
     }
 

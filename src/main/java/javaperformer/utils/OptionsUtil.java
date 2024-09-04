@@ -15,6 +15,8 @@
  */
 package javaperformer.utils;
 
+import com.couchbase.client.metrics.opentelemetry.OpenTelemetryMeter;
+import extras.telemetry.OpenTelemetryRequestTracer;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import javaperformer.InternalPerformerFailure;
 import javaperformer.JavaSdkCommandExecutor;
@@ -417,7 +419,7 @@ public class OptionsUtil {
                     meterProviderForShutdown.forceFlush();
                     meterProviderForShutdown.shutdown();
                 });
-//                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
+                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
             }
             if (oc.hasTracing()) {
                 // [end]
@@ -428,8 +430,8 @@ public class OptionsUtil {
                     tracerProviderForShutdown.forceFlush();
                     tracerProviderForShutdown.shutdown();
                 });
-//                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
-//                clusterEnvironment.requestTracer(tracer);
+                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
+                clusterEnvironment.requestTracer(tracer);
                 // [end]
                 // [if:3.2.0]
             }

@@ -24,6 +24,9 @@ import com.couchbase.client.core.error.TracerException;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.*;
 import io.opentelemetry.context.Context;
+import javaperformer.JavaPerformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -43,6 +46,7 @@ import java.util.jar.Manifest;
 public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareRequestTracer2 {
 
   public static final String INSTRUMENTATION_NAME = "com.couchbase.client.jvm";
+  private static final Logger logger = LoggerFactory.getLogger(JavaPerformer.class);
 
   private static final Map<String, Attributes> MANIFEST_INFOS = new ConcurrentHashMap<>();
 
@@ -160,6 +164,7 @@ public class OpenTelemetryRequestTracer implements RequestTracer, GrpcAwareReque
 
   @Override
   public void registerGrpc(io.grpc.ManagedChannelBuilder<?> builder) {
+    logger.info("OpenTelemetryRequestTracer::registerGrpc was called");
     if (openTelemetry != null) {
       var grpcTelemetry =
         GrpcTelemetry.create(openTelemetry);
