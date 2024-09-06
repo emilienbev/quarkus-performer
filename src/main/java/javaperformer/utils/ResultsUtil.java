@@ -17,7 +17,6 @@
 package javaperformer.utils;
 
 import javaperformer.InternalPerformerFailure;
-import javaperformer.JavaPerformer;
 import com.couchbase.client.core.cnc.events.transaction.TransactionCleanupAttemptEvent;
 import com.couchbase.client.core.cnc.events.transaction.TransactionLogEvent;
 import com.couchbase.client.core.error.*;
