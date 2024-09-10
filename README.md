@@ -47,14 +47,14 @@ mvn clean install -Dnative -DskipTests
 ```
 Once it is compiled run the performer:
 ```shell script
-cd cd target/quarkus-couchbase-demo-1.0.0-SNAPSHOT-native-image-source-jar
-java -jar quarkus-couchbase-demo-1.0.0-SNAPSHOT-runner.jar
+cd target/quarkus-performer-1.0.0-SNAPSHOT-native-image-source-jar
+java -jar quarkus-performer-1.0.0-SNAPSHOT-runner.jar
 ```
 
 ### Step 3
 Clone transactions-fit-performer:
 ```shell script
-git clone git clone git@github.com:couchbaselabs/transactions-fit-performer.git
+git clone git@github.com:couchbaselabs/transactions-fit-performer.git
 ```
 Open the project in another IDE window and follow the README.md to configure FITConfirguration.json.
 
