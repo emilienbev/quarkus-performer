@@ -106,6 +106,13 @@ enum Caps {
   SDK_COUCHBASE2_OBSERVABILITY = 26;
 
   // The SDK implements support for Zone aware read from replica in Lookupin and Get operations
-  // The options requiring support are SELECTED_SERVER_GROUP & SELECTED_SERVER_GROUP_OR_ALL_AVAILABLE.
+  // The options requiring support are SELECTED_SERVER_GROUP
+  // Add SDK_ZONE_AWARE_READ_FROM_REPLICA_SELECTED_SERVER_GROUP_OR_ALL_AVAILABLE if your performer also supports the optional
+  // SELECTED_SERVER_GROUP_OR_ALL_AVAILABLE mode.
   SDK_ZONE_AWARE_READ_FROM_REPLICA = 27;
+  SDK_ZONE_AWARE_READ_FROM_REPLICA_SELECTED_SERVER_GROUP_OR_ALL_AVAILABLE = 29;
+
+  // The SDK will send cluster name and uuid labels in spans and metrics.
+  // OBSERVABILITY_1 is a prerequisite.  (But not SDK_OBSERVABILITY_RFC_REV_24)
+  SDK_OBSERVABILITY_CLUSTER_LABELS = 28;
 }

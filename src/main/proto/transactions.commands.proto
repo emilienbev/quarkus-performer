@@ -84,7 +84,9 @@ enum ExternalException {
     TransactionAlreadyCommitted = 21;
     UnambiguousTimeoutException = 22;
     AmbiguousTimeoutException = 23;
-    AuthenticationFailureException=24;
+    AuthenticationFailureException = 24;
+    // Added with EXT_REPLICA_FROM_PREFERRED_GROUP
+    DocumentUnretrievableException = 25;
 }
 
 enum ErrorClass {

@@ -13,6 +13,7 @@ import "shared.collection.proto";
 import "shared.basic.proto";
 import "google/protobuf/timestamp.proto";
 import "streams.top_level.proto";
+import "shared.transcoders.proto";
 
 // Executing either a `cluster.search()` or `scope.search()` FTS query.
 // This is the new API, replacing `cluster.searchQuery()`, that also supports vector search.
@@ -318,6 +319,7 @@ message SearchOptions {
   optional string parent_span_id = 11;
   map<string, string> raw = 12;
   optional bool include_locations = 13;
+  optional protocol.shared.JsonSerializer serialize = 14;
 }
 
 enum MatchOperator {

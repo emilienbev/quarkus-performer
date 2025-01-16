@@ -128,6 +128,7 @@ message CouchbaseExceptionEx {
   string serialized = 4;
 }
 
+
 // If the exception is not represented in SdkException, can return it in raw form here
 message ExceptionOther {
   // The simple name e.g. "InvalidArgumentException"

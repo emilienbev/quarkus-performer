@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.acme</groupId>
+    <groupId>com.couchbase</groupId>
     <artifactId>quarkus-performer</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
@@ -12,9 +12,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.13.3</quarkus.platform.version>
+        <quarkus.platform.version>3.17.7</quarkus.platform.version>
         <skipITs>true</skipITs>
-        <surefire-plugin.version>3.2.5</surefire-plugin.version>
+        <surefire-plugin.version>3.5.0</surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -30,11 +30,13 @@
     </dependencyManagement>
 
     <dependencies>
+
         <dependency>
-            <groupId>io.quarkiverse.couchbase</groupId>
-            <artifactId>quarkus-couchbase</artifactId>
-            <version>999-SNAPSHOT</version>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health</artifactId>
+            <optional>true</optional>
         </dependency>
+        <!--   from docs     -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-grpc</artifactId>
@@ -42,6 +44,11 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.couchbase</groupId>
+            <artifactId>quarkus-couchbase</artifactId>
+            <version>999-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -57,22 +64,11 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.10.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>metrics-opentelemetry</artifactId>
-            <version>0.5.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.quarkus</groupId>-->
+<!--            <artifactId>quarkus-opentelemetry</artifactId>-->
+<!--        </dependency>-->
+<!--        fgiwbgrebovr-->
 
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
@@ -80,29 +76,59 @@
             <!-- Older versions of Maven (certainly 3.6.3) cannot support "${opentelemetry.version}-alpha" -->
             <version>1.31.0-alpha</version>
             <!-- Don't want the transitive dependencies to be shaded into tracing-opentelemetry-deps -->
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>*</groupId>-->
+<!--                    <artifactId>*</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.couchbase.client</groupId>
+            <artifactId>tracing-opentelemetry</artifactId>
+            <version>1.5.6</version>
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>io.opentelemetry.instrumentation</groupId>-->
+<!--                    <artifactId>opentelemetry-instrumentation-api-semconv</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+        </dependency>
+
+        <dependency>
+            <groupId>com.couchbase.client</groupId>
+            <artifactId>metrics-opentelemetry</artifactId>
+            <version>0.7.6</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
 
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
+            <version>1.42.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
+            <version>1.42.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
+            <version>1.42.1</version>
         </dependency>
-<!--   end of telemetry     -->
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-instrumentation-api</artifactId>
+            <version>1.31.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -118,6 +144,7 @@
                             <goal>build</goal>
                             <goal>generate-code</goal>
                             <goal>generate-code-tests</goal>
+                            <goal>native-image-agent</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -126,9 +153,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${compiler-plugin.version}</version>
                 <configuration>
-                    <compilerArgs>
-                        <arg>-parameters</arg>
-                    </compilerArgs>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <plugin>

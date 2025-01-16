@@ -32,6 +32,7 @@ message TransactionQueryOptions {
     optional int32 pipeline_batch = 10;
     optional int32 scan_cap = 11;
     optional int32 scan_wait_millis = 12;
+    optional string client_context_id = 13;
 }
 
 // Options that can be overridden at the individual transaction level.

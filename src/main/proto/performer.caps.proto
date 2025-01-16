@@ -64,6 +64,27 @@ enum Caps {
 
     // If the performer supports ContentAsPerformerValidation.
     CONTENT_AS_PERFORMER_VALIDATION = 11;
+
+    /**
+       * The performer supports custom serialization logic for search options ie .serialize(CustomSerializer).
+       * This capability includes the ability to parse results custom serializer implemented in respective performers.
+       * The custom serializer should adhere to the following logic:
+           1. During serialization:
+              - Convert the input object to a JSON string.
+              - Add a "Serialized": true field to the JSON object.
+              - Return the JSON object as a byte array.
+          2. During deserialization:
+              - Parse the byte array into a JSON object.
+              - Upsert a "Serialized": false field to the JSON object.
+              - Return the updated JSON object as the deserialized result.
+     */
+    CUSTOM_SERIALIZATION_SUPPORT_FOR_SEARCH = 12;
+
+    // The performer supports content types as null value.
+    AS_NULL_CONTENT_TYPE_SUPPORT = 13;
+
+    // The performer supports client_context_id as Transaction Query Option.
+    TXN_CLIENT_CONTEXT_ID_SUPPORT = 14;
 }
 
 message PerformerCapsFetchRequest {

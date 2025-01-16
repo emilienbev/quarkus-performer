@@ -87,6 +87,8 @@ message ContentOrError {
 }
 
 message ContentTypes {
+  message NullValue {}
+
   oneof content {
     // Used for content as bytes and JSON
     bytes content_as_bytes = 1;
@@ -98,6 +100,9 @@ message ContentTypes {
     double content_as_double = 4;
 
     bool content_as_bool = 5;
+
+    // content returned by sdk is supposed to be null
+    NullValue content_as_null = 6;
   }
 }
 

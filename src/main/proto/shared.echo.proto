@@ -7,6 +7,7 @@ option go_package = "github.com/couchbaselabs/transactions-fit-performer/protoco
 option ruby_package = "FIT::Protocol::Shared";
 option java_multiple_files = true;
 
+// Request that the performer Echo a string to the performer logs.
 message EchoRequest {
     string message = 1;
     string testName = 2;
