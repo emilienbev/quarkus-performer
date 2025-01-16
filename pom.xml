@@ -30,13 +30,11 @@
     </dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-health</artifactId>
             <optional>true</optional>
         </dependency>
-        <!--   from docs     -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-grpc</artifactId>
@@ -64,39 +62,16 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.quarkus</groupId>-->
-<!--            <artifactId>quarkus-opentelemetry</artifactId>-->
-<!--        </dependency>-->
-<!--        fgiwbgrebovr-->
-
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-grpc-1.6</artifactId>
-            <!-- Older versions of Maven (certainly 3.6.3) cannot support "${opentelemetry.version}-alpha" -->
             <version>1.31.0-alpha</version>
-            <!-- Don't want the transitive dependencies to be shaded into tracing-opentelemetry-deps -->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>*</groupId>-->
-<!--                    <artifactId>*</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
         </dependency>
-
-
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>tracing-opentelemetry</artifactId>
             <version>1.5.6</version>
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>io.opentelemetry.instrumentation</groupId>-->
-<!--                    <artifactId>opentelemetry-instrumentation-api-semconv</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
         </dependency>
-
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>metrics-opentelemetry</artifactId>
@@ -106,19 +81,16 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-api</artifactId>
             <version>1.42.1</version>
         </dependency>
-
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
             <version>1.42.1</version>
         </dependency>
-
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>

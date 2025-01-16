@@ -105,11 +105,7 @@ import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 // [if:3.7.2]
 import static com.couchbase.client.java.transactions.internal.TransactionsSupportedExtensionsUtil.SUPPORTED;
 // [end]
-import io.opentelemetry.instrumentation.api.internal.SemconvStability;
-import com.couchbase.client.tracing.opentelemetry.OpenTelemetryRequestTracer;
-import com.couchbase.client.core.deps.io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetryBuilder;
-//import com.couchbase.client.core.deps.io.opentelemetry.instrumentation.grpc.v1_6.GrpcTelemetryBuilder;
-//import io.opentelemetry.instrumentation.api.instrumenter.network.ServerAttributesExtractor;
+
 public class JavaPerformer extends CorePerformer {
     public static final Logger logger = LoggerFactory.getLogger(JavaPerformer.class);
     private static final ConcurrentHashMap<String, ClusterConnection> clusterConnections = new ConcurrentHashMap<>();

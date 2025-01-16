@@ -20,19 +20,32 @@ git checkout
 
 cd ..
 
-# Copy files from CorePerformer and JavaPerformer without breaking imports
+echo "$counter - Copying files from Core and Java Performers"
+((counter++))
 cp -rn couchbase-jvm-clients/core-fit-performer/src/main/java/com/couchbase/* src/main/java/com/couchbase/
 cp -rn couchbase-jvm-clients/java-fit-performer/src/main/java/com/couchbase/* src/main/java/com/couchbase/
 
-# Copy proto files
+echo "$counter - Copying .proto files from transactions-fit-performer"
+((counter++))
 cp -r transactions-fit-performer/gRPC/*.proto src/main/proto/
 
-# Copy internal core-io classes
 echo "$counter - Cloning and copying internal classes from core-io"
+((counter++))
 mkdir -p "src/main/java/com/couchbase/client/core/transaction/forwards"
 cp -r couchbase-jvm-clients/core-io/src/main/java/com/couchbase/client/core/transaction/forwards/*.java src/main/java/com/couchbase/client/core/transaction/forwards/
 
 echo "$counter - Removing main method from JavaPerformer"
 ((counter++))
-# Next, need to delete the main method from JavaPerformer
 ./deleteMethod.sh "public static void main(String[] args) throws IOException, InterruptedException" "src/main/java/com/couchbase/JavaPerformer.java"
+
+echo "$counter - Adjusting performer for Quarkus compatibility"
+((counter++))
+sed -i '/response\.addPerformerCaps(Caps\.OBSERVABILITY_1);/d' src/main/java/com/couchbase/JavaPerformer.java
+sed -i '/var userExecutorAndScheduler = UserSchedulerUtil\.userExecutorAndScheduler();/{N;N;d}' src/main/java/com/couchbase/JavaPerformer.java
+
+echo "$counter - Delete cloned repositories"
+((counter++))
+rm -rf couchbase-jvm-clients
+rm -rf transactions-fit-performer
+
+
