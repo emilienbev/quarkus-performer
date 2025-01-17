@@ -43,6 +43,17 @@ echo "$counter - Adjusting performer for Quarkus compatibility"
 sed -i '/response\.addPerformerCaps(Caps\.OBSERVABILITY_1);/d' src/main/java/com/couchbase/JavaPerformer.java
 sed -i '/var userExecutorAndScheduler = UserSchedulerUtil\.userExecutorAndScheduler();/{N;N;d}' src/main/java/com/couchbase/JavaPerformer.java
 
+#Deletes the body of UserSchedulerUtil.assertInCustomUserSchedulerThread
+sed -E '
+/^\s*private static void assertInCustomUserSchedulerThread\(/, /^\s*}/ {
+  # Skip the method declaration line
+  /^\s*private static void assertInCustomUserSchedulerThread\(/ b;
+  # Skip the closing brace line
+  /^\s*}/ b;
+  # Delete everything else (the method body)
+  d;
+}' src/main/java/com/couchbase/utils/UserSchedulerUtil.java
+
 echo "$counter - Delete cloned repositories"
 ((counter++))
 rm -rf couchbase-jvm-clients
