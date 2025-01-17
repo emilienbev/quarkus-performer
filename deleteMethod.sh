@@ -8,12 +8,12 @@ count_braces() {
         # Find the method or class name and ignore leading spaces
         if (!$in_method && /^\s*\b'"$method"'\s*(\(\s*\))?/) {
             $in_method = 1;
-            $start_line = $.;
         }
 
         # Go through each line until we find an opening brace (for multi-line method arguments)
         if ($in_method) {
             if (/.*\{/) {
+                $start_line = $.;
                 $found = 1;
                 $in_method = 0;
             }
@@ -31,10 +31,10 @@ count_braces() {
     ' "$file"
 }
 
-
 delete_method() {
     local method="$1"
     local file="$2"
+    local body_only="${3:-false}"
 
     local line_info
     local start_line
@@ -43,6 +43,11 @@ delete_method() {
     line_info=$(count_braces "$method" "$file")
     start_line=$(echo "$line_info" | cut -d':' -f2 | cut -d' ' -f1)
     end_line=$(echo "$line_info" | cut -d':' -f3)
+
+    if "$body_only"; then
+        start_line=$((start_line + 1))
+        end_line=$((end_line - 1))
+    fi
 
     if [ -n "$start_line" ] && [ -n "$end_line" ]; then
         start_line=$((start_line))
@@ -54,9 +59,9 @@ delete_method() {
 }
 
 # Entry point
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <method_name> <file_name>"
+if [ "$#" -lt 2 ]; then
+    echo "Usage: $0 <method_name> <file_name> <body_only>. (Body only specifies whether the whole method should be deleted, or only the body)"
     exit 1
 fi
 
-delete_method "$1" "$2"
+delete_method "$1" "$2" "$3"
