@@ -41,9 +41,10 @@ enum Caps {
     EXT_QUERY_CONTEXT = 24;
     EXT_PARALLEL_UNSTAGING = 25;
 
-    // Support for Caps.CONTENT_AS_PERFORMER_VALIDATION is a pre-requisite.
+    // Support for Caps.CONTENT_AS_PERFORMER_VALIDATION is a pre-requisite for all following extensions.
     EXT_BINARY_SUPPORT = 26;
     EXT_REPLICA_FROM_PREFERRED_GROUP = 27;
+    EXT_GET_MULTI = 28;
 
     // Remember to add a test to ForwardCompatibilityTest for each extension
 }

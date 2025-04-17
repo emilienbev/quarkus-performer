@@ -92,6 +92,11 @@ public class Capabilities {
         out.add(Caps.SDK_OBSERVABILITY_CLUSTER_LABELS);
         // [end]
 
+        // [if:3.8.0]
+        out.add(Caps.SDK_APP_TELEMETRY);
+        out.add(Caps.SDK_BUCKET_SETTINGS_NUM_VBUCKETS);
+        // [end]
+
         return out;
     }
 }

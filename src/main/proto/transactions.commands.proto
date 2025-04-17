@@ -13,6 +13,7 @@ import "transactions.legacy.proto";
 import "shared.collection.proto";
 import "shared.doc_location.proto";
 import "shared.content.proto";
+import "shared.transcoders.proto";
 
 enum EventType {
     EventCleanupFailedEvent = 0;
@@ -205,6 +206,37 @@ message CommandGetReplicaFromPreferredServerGroup {
 
     // Added with EXT_BINARY_SUPPORT and will only be sent if performer declares support for that.
     optional TransactionGetOptions options = 7;
+}
+
+// The SDK needs to implement TransactionGetMultiReplicasFromPreferredServerGroupOptions and TransactionGetMultiReplicaFromPreferredServerGroupSpec.
+// But to save testing effort, and because the APIs are currently identical except for naming, FIT will use the
+// same CommandGetMulti for both.  If they diverge in future we will copy the messages then.
+message CommandGetMulti {
+    message TransactionGetMultiSpec {
+        shared.DocLocation location = 1;
+        optional shared.Transcoder transcoder = 2;
+
+        // The performer always needs to check if the doc is returned as Optional.None or present, against this.
+        bool expect_present = 3;
+
+        // Determines if and how the performer should execute transactionGetResult.contentAs() on this individual spec result.
+        optional shared.ContentAsPerformerValidation content_as_validation = 6;
+
+        // Each spec will result in a result in the output array.  This contains the required position of the result
+        // in that array, which the SDK must validate.
+        int32 expected_result_position = 5;
+    }
+
+    repeated TransactionGetMultiSpec specs = 1;
+
+    optional TransactionGetMultiOptions options = 2;
+
+    // What result(s) this individual spec is allowed to return.  Anything outside this will fail the test.
+    // The performer must perform this validation.  If this is empty, the performer skips validation.
+    repeated ExpectedResult expected_result = 3;
+
+    // Iff true, performer should use ctx.getMultiReplicasFromPreferredServerGroup() instead of ctx.getMulti()
+    bool get_multi_replicas_from_preferred_server_group = 4;
 }
 
 message CommandInsert {
@@ -481,6 +513,7 @@ message TransactionCommand {
         Get get_v2 = 18;
         Remove remove_v2 = 19;
         Replace replace_v2 = 20;
+        CommandGetMulti get_multi = 22;
 
         CommandGetReplicaFromPreferredServerGroup get_from_preferred_server_group = 21;
     }

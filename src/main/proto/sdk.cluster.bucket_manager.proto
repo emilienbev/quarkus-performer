@@ -121,6 +121,7 @@ message BucketSettings {
   optional bool history_retention_collection_default = 12;
   optional int64 history_retention_seconds = 13;
   optional uint64 history_retention_bytes = 14;
+  optional uint32 num_vbuckets = 15;
 }
 
 message GetAllBucketsResult {

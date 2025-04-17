@@ -280,11 +280,13 @@ public class JavaPerformer extends CorePerformer {
                     request.getClusterConnectionId(), connection.username);
 
             TransactionResult response;
+            var counters = new Counters();
+            var executor = new JavaTransactionCommandExecutor(connection, counters, spans);
             if (request.getApi() == API.DEFAULT) {
-                response = TwoWayTransactionBlocking.run(connection, request, (TransactionCommandExecutor) null, false, spans);
+              response = TwoWayTransactionBlocking.run(connection, request, executor, false, spans);
             }
             else {
-                response = TwoWayTransactionReactive.run(connection, request, spans);
+                response = TwoWayTransactionReactive.run(connection, request, executor, spans);
             }
 
             responseObserver.onNext(response);

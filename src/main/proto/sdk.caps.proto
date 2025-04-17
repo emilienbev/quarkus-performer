@@ -115,4 +115,13 @@ enum Caps {
   // The SDK will send cluster name and uuid labels in spans and metrics.
   // OBSERVABILITY_1 is a prerequisite.  (But not SDK_OBSERVABILITY_RFC_REV_24)
   SDK_OBSERVABILITY_CLUSTER_LABELS = 28;
+
+  // The SDK implements support for the Application Telemetry feature, as detailed in SDK-RFC 84.
+  SDK_APP_TELEMETRY = 30;
+
+  // The SDK implements the num_vbuckets attribute of BucketSettings
+  SDK_BUCKET_SETTINGS_NUM_VBUCKETS = 31;
+
+  // The SDK implements support for Vector Search prefiltering.
+  SDK_PREFILTER_VECTOR_SEARCH = 32;
 }
