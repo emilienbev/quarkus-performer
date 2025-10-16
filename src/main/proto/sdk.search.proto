@@ -74,6 +74,7 @@ message VectorQuery {
 message VectorQueryOptions {
   optional int32 num_candidates = 1;
   optional float boost = 2;
+  optional SearchQuery prefilter = 3;
 }
 
 message VectorSearch {
