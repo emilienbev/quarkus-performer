@@ -71,7 +71,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -84,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -91,6 +91,23 @@ public class OptionsUtil {
     private static final Logger logger = LoggerFactory.getLogger(OptionsUtil.class);
 
     private OptionsUtil() {}
+
+    public static Consumer<ClusterEnvironment.Builder> convertClusterConfigToConsumer(ClusterConnectionCreateRequest request,
+                                                                                      Supplier<ClusterConnection> getCluster,
+                                                                                      ArrayList<Runnable> onClusterConnectionClose) {
+        return (builder) -> {
+            if (request.hasClusterConfig()) {
+                var cc = request.getClusterConfig();
+                applyClusterConfig(builder, cc, onClusterConnectionClose);
+
+                // [if:3.3.0]
+                if (request.getClusterConfig().hasTransactionsConfig()) {
+                    applyTransactionsConfig(request, getCluster, builder);
+                }
+                // [end]
+            }
+        };
+    }
 
     public static
     ClusterEnvironment.Builder convertClusterConfig(ClusterConnectionCreateRequest request,
@@ -101,73 +118,61 @@ public class OptionsUtil {
         if (request.hasClusterConfig()) {
             var cc = request.getClusterConfig();
 
-            if (cc.getUseCustomSerializer()) {
-                clusterEnvironment.jsonSerializer(new CustomSerializer());
-            }
+            applyClusterConfig(clusterEnvironment, cc, onClusterConnectionClose);
 
-            // [if:3.3.0]
-            if (request.getClusterConfig().hasTransactionsConfig()) {
-                applyTransactionsConfig(request, getCluster, clusterEnvironment);
-            }
-            // [end]
-
-            SecurityConfig.Builder secBuilder = null;
-            if (cc.getUseTls()) {
-                secBuilder = SecurityConfig.builder();
-                secBuilder.enableTls(true);
-            }
-
-            if (cc.hasCertPath()) {
-              if (secBuilder == null) secBuilder = SecurityConfig.builder();
-              logger.info("Using certificate from file {}", cc.getCertPath());
-              secBuilder.trustCertificate(Path.of(cc.getCertPath()));
-            }
-
-          if (cc.hasCert()) {
-            if (secBuilder == null) secBuilder = SecurityConfig.builder();
-            try {
-              CertificateFactory cFactory = CertificateFactory.getInstance("X.509");
-              var file = new ByteArrayInputStream(cc.getCert().getBytes(StandardCharsets.UTF_8));
-              logger.info("Using certificate {}", cc.getCert());
-              X509Certificate cert = (X509Certificate) cFactory.generateCertificate(file);
-
-              secBuilder.trustCertificates(List.of(cert));
-            }
-            catch (CertificateException err) {
-              throw new RuntimeException(err);
-            }
-          }
-
-          if (cc.hasInsecure() && cc.getInsecure()) {
-            if (secBuilder == null) secBuilder = SecurityConfig.builder();
-            // Cannot use enableCertificateVerification as it was added later
-            secBuilder.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE);
-          }
-
-          if (secBuilder != null) {
-              clusterEnvironment.securityConfig(secBuilder);
-            }
-
-            applyClusterConfig(clusterEnvironment, cc);
-
-            if (cc.hasObservabilityConfig()) {
-                applyObservabilityConfig(clusterEnvironment, cc, onClusterConnectionClose);
-            }
-
-            if (cc.hasPreferredServerGroup()) {
-              // [if:3.7.4]
-              clusterEnvironment.preferredServerGroup(cc.getPreferredServerGroup());
-              // [end]
-            }
+            // No need to support transactions here, as this code is now only executed in <3.2.6 mode (transactions
+            // was introduced in 3.3.0)
         }
 
         return clusterEnvironment;
     }
 
-    private static void applyClusterConfig(ClusterEnvironment.Builder clusterEnvironment, ClusterConfig cc) {
+    private static void applyClusterConfig(ClusterEnvironment.Builder clusterEnvironment,
+                                           ClusterConfig cc,
+                                           ArrayList<Runnable> onClusterConnectionClose) {
         IoConfig.Builder ioConfig = null;
         TimeoutConfig.Builder timeoutConfig = null;
 
+        if (cc.getUseCustomSerializer()) {
+            clusterEnvironment.jsonSerializer(new CustomSerializer());
+        }
+
+        SecurityConfig.Builder secBuilder = null;
+        if (cc.getUseTls()) {
+            secBuilder = SecurityConfig.builder();
+            secBuilder.enableTls(true);
+        }
+
+        if (cc.hasCertPath()) {
+            if (secBuilder == null) secBuilder = SecurityConfig.builder();
+            logger.info("Using certificate from file {}", cc.getCertPath());
+            secBuilder.trustCertificate(Path.of(cc.getCertPath()));
+        }
+
+        if (cc.hasCert()) {
+            if (secBuilder == null) secBuilder = SecurityConfig.builder();
+            try {
+                CertificateFactory cFactory = CertificateFactory.getInstance("X.509");
+                var file = new ByteArrayInputStream(cc.getCert().getBytes(StandardCharsets.UTF_8));
+                logger.info("Using certificate {}", cc.getCert());
+                X509Certificate cert = (X509Certificate) cFactory.generateCertificate(file);
+
+                secBuilder.trustCertificates(List.of(cert));
+            }
+            catch (CertificateException err) {
+                throw new RuntimeException(err);
+            }
+        }
+
+        if (cc.hasInsecure() && cc.getInsecure()) {
+            if (secBuilder == null) secBuilder = SecurityConfig.builder();
+            // Cannot use enableCertificateVerification as it was added later
+            secBuilder.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE);
+        }
+
+        if (secBuilder != null) {
+            clusterEnvironment.securityConfig(secBuilder);
+        }
         if (cc.hasKvConnectTimeoutSecs()) {
             if (timeoutConfig == null) timeoutConfig = TimeoutConfig.builder();
             timeoutConfig.connectTimeout(Duration.ofSeconds(cc.getKvConnectTimeoutSecs()));
@@ -280,6 +285,34 @@ public class OptionsUtil {
         if (timeoutConfig != null) {
             clusterEnvironment.timeoutConfig(timeoutConfig);
         }
+
+        if (cc.hasObservabilityConfig()) {
+            applyObservabilityConfig(clusterEnvironment, cc, onClusterConnectionClose);
+        }
+
+        if (cc.hasPreferredServerGroup()) {
+            // [if:3.7.4]
+            clusterEnvironment.preferredServerGroup(cc.getPreferredServerGroup());
+            // [end]
+        }
+
+        if (cc.hasAppTelemetryEndpoint()) {
+            // [if:3.8.0]
+            clusterEnvironment.appTelemetryEndpoint(cc.getAppTelemetryEndpoint());
+            // [end]
+        }
+
+        if (cc.hasEnableAppTelemetry()) {
+            // [if:3.8.0]
+            clusterEnvironment.disableAppTelemetry(!cc.getEnableAppTelemetry());
+            // [end]
+        }
+
+        // [if:3.7.5] first version that allows specifying custom publishOn scheduler
+//        var userExecutorAndScheduler = UserSchedulerUtil.userExecutorAndScheduler();
+//        onClusterConnectionClose.add(userExecutorAndScheduler::dispose);
+//        clusterEnvironment.publishOnScheduler(userExecutorAndScheduler::scheduler);
+        // [end]
     }
 
     // [if:3.5.1]
@@ -371,37 +404,37 @@ public class OptionsUtil {
 
         // [if:3.2.0]
         if (oc.hasMetrics() || oc.hasTracing()) {
-            SdkTracerProvider tracerProvider = null;
+//            SdkTracerProvider tracerProvider = null;
             SdkMeterProvider meterProvider = null;
 
-            if (oc.hasTracing()) {
-                var tc = oc.getTracing();
-                var epsilon = 0.00001;
-                var sampler = (tc.getSamplingPercentage() < epsilon)
-                        ? Sampler.alwaysOff()
-                        : (tc.getSamplingPercentage() > (1.0 - epsilon))
-                        ? Sampler.alwaysOn()
-                        : Sampler.traceIdRatioBased(tc.getSamplingPercentage());
-
-                var exporter = OtlpGrpcSpanExporter.builder()
-                        .setCompression("gzip")
-                        .setEndpoint(tc.getEndpointHostname())
-                        .build();
-
-                var processor = tc.getBatching()
-                        ? BatchSpanProcessor.builder(exporter)
-                        .setScheduleDelay(Duration.ofMillis(tc.getExportEveryMillis()))
-                        .build()
-                        : SimpleSpanProcessor.create(exporter);
-
-                ResourceBuilder resource = createOpenTelemetryResource(tc.getResourcesMap());
-
-                tracerProvider = SdkTracerProvider.builder()
-                        .setResource(Resource.getDefault().merge(resource.build()))
-                        .addSpanProcessor(processor)
-                        .setSampler(sampler)
-                        .build();
-            }
+//            if (oc.hasTracing()) {
+//                var tc = oc.getTracing();
+//                var epsilon = 0.00001;
+//                var sampler = (tc.getSamplingPercentage() < epsilon)
+//                        ? Sampler.alwaysOff()
+//                        : (tc.getSamplingPercentage() > (1.0 - epsilon))
+//                        ? Sampler.alwaysOn()
+//                        : Sampler.traceIdRatioBased(tc.getSamplingPercentage());
+//
+//                var exporter = OtlpGrpcSpanExporter.builder()
+//                        .setCompression("gzip")
+//                        .setEndpoint(tc.getEndpointHostname())
+//                        .build();
+//
+//                var processor = tc.getBatching()
+//                        ? BatchSpanProcessor.builder(exporter)
+//                        .setScheduleDelay(Duration.ofMillis(tc.getExportEveryMillis()))
+//                        .build()
+//                        : SimpleSpanProcessor.create(exporter);
+//
+//                ResourceBuilder resource = createOpenTelemetryResource(tc.getResourcesMap());
+//
+//                tracerProvider = SdkTracerProvider.builder()
+//                        .setResource(Resource.getDefault().merge(resource.build()))
+//                        .addSpanProcessor(processor)
+//                        .setSampler(sampler)
+//                        .build();
+//            }
 
             if (oc.hasMetrics()) {
                 var mc = oc.getMetrics();
@@ -420,34 +453,34 @@ public class OptionsUtil {
                         .build();
             }
 
-            var openTelemetry = OpenTelemetrySdk.builder()
-                    .setTracerProvider(tracerProvider)
-                    .setMeterProvider(meterProvider)
-                    .build();
+//            var openTelemetry = OpenTelemetrySdk.builder()
+//                    .setTracerProvider(tracerProvider)
+//                    .setMeterProvider(meterProvider)
+//                    .build();
 
-            if (oc.hasMetrics()) {
-                final SdkMeterProvider meterProviderForShutdown = meterProvider;
-                onClusterConnectionClose.add(() -> {
-                    logger.info("Shutting down meter provider");
-                    meterProviderForShutdown.forceFlush();
-                    meterProviderForShutdown.shutdown();
-                });
-                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
-            }
-            if (oc.hasTracing()) {
-                // [end]
-                // [if:3.5.0]
-                final SdkTracerProvider tracerProviderForShutdown = tracerProvider;
-                onClusterConnectionClose.add(() -> {
-                    logger.info("Shutting down tracer provider");
-                    tracerProviderForShutdown.forceFlush();
-                    tracerProviderForShutdown.shutdown();
-                });
-                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
-                clusterEnvironment.requestTracer(tracer);
-                // [end]
-                // [if:3.2.0]
-            }
+//            if (oc.hasMetrics()) {
+//                final SdkMeterProvider meterProviderForShutdown = meterProvider;
+//                onClusterConnectionClose.add(() -> {
+//                    logger.info("Shutting down meter provider");
+//                    meterProviderForShutdown.forceFlush();
+//                    meterProviderForShutdown.shutdown();
+//                });
+//                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
+//            }
+//            if (oc.hasTracing()) {
+//                // [end]
+//                // [if:3.5.0]
+//                final SdkTracerProvider tracerProviderForShutdown = tracerProvider;
+//                onClusterConnectionClose.add(() -> {
+//                    logger.info("Shutting down tracer provider");
+//                    tracerProviderForShutdown.forceFlush();
+//                    tracerProviderForShutdown.shutdown();
+//                });
+//                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
+//                clusterEnvironment.requestTracer(tracer);
+//                // [end]
+//                // [if:3.2.0]
+//            }
         }
 
         if (oc.getUseNoopTracer()) {
@@ -663,4 +696,5 @@ public class OptionsUtil {
       var nanos = duration.getNanos() + TimeUnit.SECONDS.toNanos(duration.getSeconds());
       return Duration.ofNanos(nanos);
   }
+
 }

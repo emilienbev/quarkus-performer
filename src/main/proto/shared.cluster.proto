@@ -93,6 +93,13 @@ message ClusterConfig {
     optional sdk.circuit_breaker.Config circuit_breaker_config = 28;
 
     optional string preferred_server_group = 29;
+
+    // A Application telemetry endpoint WebSocket URI of the form "ws://<host>:<port>/<path>"
+    optional string app_telemetry_endpoint = 30;
+    optional int32 app_telemetry_backoff_secs = 31;
+    optional bool enable_app_telemetry = 32;
+    optional int32 app_telemetry_ping_interval_secs = 33;
+    optional int32 app_telemetry_ping_timeout_secs = 34;
 }
 
 // Only sent to ExtSDKIntegration-supporting performers.
