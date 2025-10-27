@@ -104,7 +104,7 @@
         <dependency>
             <groupId>io.quarkiverse.couchbase</groupId>
             <artifactId>quarkus-couchbase</artifactId>
-            <version>999-SNAPSHOT</version>
+            <version>1.2.0</version>
         </dependency>
     </dependencies>
 
