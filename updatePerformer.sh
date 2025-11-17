@@ -1,13 +1,35 @@
 counter=1
 
-echo "$counter - Cloning couchbase-jvm-clients"
+echo "$counter - Fetching Couchbase Java SDK version and Quarkus version from quarkus-couchbase"
+((counter++))
+POM_CONTENT=$(curl -s https://raw.githubusercontent.com/quarkiverse/quarkus-couchbase/main/pom.xml)
+SDK_VERSION=$(echo "$POM_CONTENT" | awk -F'[<>]' '/couchbase.client.version/ {print $3}' | tr -d '[:space:]')
+QUARKUS_VERSION=$(echo "$POM_CONTENT" | grep -E '<quarkus\.version>' | grep -v 'platform' | awk -F'[<>]' '{print $3}' | tr -d '[:space:]')
+if [ -z "$SDK_VERSION" ]; then
+  echo "Error: Failed to fetch SDK version"
+  exit 1
+fi
+if [ -z "$QUARKUS_VERSION" ]; then
+  echo "Error: Failed to fetch Quarkus version"
+  exit 1
+fi
+echo "Detected SDK version: $SDK_VERSION"
+echo "Detected Quarkus version: $QUARKUS_VERSION"
+
+echo "$counter - Updating Quarkus version in local pom.xml"
+((counter++))
+sed -i '' "s|<quarkus.platform.version>[^<]*</quarkus.platform.version>|<quarkus.platform.version>${QUARKUS_VERSION}</quarkus.platform.version>|" pom.xml
+
+echo "$counter - Cloning couchbase-jvm-clients (tag: $SDK_VERSION)"
 ((counter++))
 
 # Step 1: Clone the repository with no files checked out
-git clone -n --depth=1 --filter=blob:none --sparse git@github.com:couchbase/couchbase-jvm-clients.git
+git clone -n --filter=blob:none --sparse git@github.com:couchbase/couchbase-jvm-clients.git
 cd couchbase-jvm-clients || exit
+# Fetch the specific tag
+git fetch origin tag "$SDK_VERSION" --depth=1
 git sparse-checkout set --no-cone /core-fit-performer/src/main/java/ /java-fit-performer/src/main/java/ /core-io/src/main/java/com/couchbase/client/core/transaction/forwards/
-git checkout
+git checkout "tags/$SDK_VERSION"
 
 cd ..
 echo "$counter - Cloning transactions-fit-performer"
