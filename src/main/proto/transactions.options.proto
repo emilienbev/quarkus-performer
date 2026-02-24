@@ -75,8 +75,12 @@ message TransactionGetMultiOptions {
 
 message TransactionInsertOptions {
   optional shared.Transcoder transcoder = 1;
+  // Added with EXT_TTL and will only be sent if performer declares support for that
+  optional shared.Expiry expiry = 2;
 }
 
 message TransactionReplaceOptions {
   optional shared.Transcoder transcoder = 1;
+  // Added with EXT_TTL and will only be sent if performer declares support for that
+  optional shared.Expiry expiry = 2;
 }

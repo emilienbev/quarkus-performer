@@ -46,6 +46,7 @@ enum Caps {
     EXT_REPLICA_FROM_PREFERRED_GROUP = 27;
     EXT_GET_MULTI = 28;
     EXT_REPLICA_FROM_PREFERRED_GROUP_PATCH1 = 29;
+    EXT_TTL = 30;
 
     // Remember to add a test to ForwardCompatibilityTest for each extension
 }

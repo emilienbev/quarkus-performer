@@ -129,4 +129,21 @@ enum Caps {
   //  * SDK3 Query RFC Revision #9
   //  * SDK3 Analytics RFC Revision #3
   SDK_QUERY_BOTH_POSITIONAL_AND_NAMED_PARAMETERS = 33;
+
+  // The SDK supports the Authenticator type.
+  SUPPORTS_AUTHENTICATOR = 34;
+
+  // The SDK supports setting a new Authenticator.
+  SDK_SET_AUTHENTICATOR = 35;
+
+  // The SDK supports JwtAuthenticator.
+  SDK_JWT = 36;
+
+  // The SDK supports the stable OpenTelemetry semantic conventions (ExtendedObservability RFC Rev 26)
+  SDK_STABLE_OTEL_SEMANTIC_CONVENTIONS = 37;
+
+  // The SDK emits the stable OpenTelemetry semantic conventions by default.
+  // SDK_STABLE_OTEL_SEMANTIC_CONVENTIONS is a pre-requisite. This should only be declared by SDKs that do not
+  // support the legacy semantic conventions (C++ & wrappers, Rust).
+  SDK_STABLE_OTEL_SEMANTIC_CONVENTIONS_EMITTED_BY_DEFAULT = 38;
 }

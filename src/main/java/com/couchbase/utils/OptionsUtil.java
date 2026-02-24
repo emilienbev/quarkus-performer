@@ -309,9 +309,9 @@ public class OptionsUtil {
         }
 
         // [if:3.7.5] first version that allows specifying custom publishOn scheduler
-//        var userExecutorAndScheduler = UserSchedulerUtil.userExecutorAndScheduler();
-//        onClusterConnectionClose.add(userExecutorAndScheduler::dispose);
-//        clusterEnvironment.publishOnScheduler(userExecutorAndScheduler::scheduler);
+        var userExecutorAndScheduler = UserSchedulerUtil.userExecutorAndScheduler();
+        onClusterConnectionClose.add(userExecutorAndScheduler::dispose);
+        clusterEnvironment.publishOnScheduler(userExecutorAndScheduler::scheduler);
         // [end]
     }
 
@@ -404,37 +404,37 @@ public class OptionsUtil {
 
         // [if:3.2.0]
         if (oc.hasMetrics() || oc.hasTracing()) {
-//            SdkTracerProvider tracerProvider = null;
+            SdkTracerProvider tracerProvider = null;
             SdkMeterProvider meterProvider = null;
 
-//            if (oc.hasTracing()) {
-//                var tc = oc.getTracing();
-//                var epsilon = 0.00001;
-//                var sampler = (tc.getSamplingPercentage() < epsilon)
-//                        ? Sampler.alwaysOff()
-//                        : (tc.getSamplingPercentage() > (1.0 - epsilon))
-//                        ? Sampler.alwaysOn()
-//                        : Sampler.traceIdRatioBased(tc.getSamplingPercentage());
-//
-//                var exporter = OtlpGrpcSpanExporter.builder()
-//                        .setCompression("gzip")
-//                        .setEndpoint(tc.getEndpointHostname())
-//                        .build();
-//
-//                var processor = tc.getBatching()
-//                        ? BatchSpanProcessor.builder(exporter)
-//                        .setScheduleDelay(Duration.ofMillis(tc.getExportEveryMillis()))
-//                        .build()
-//                        : SimpleSpanProcessor.create(exporter);
-//
-//                ResourceBuilder resource = createOpenTelemetryResource(tc.getResourcesMap());
-//
-//                tracerProvider = SdkTracerProvider.builder()
-//                        .setResource(Resource.getDefault().merge(resource.build()))
-//                        .addSpanProcessor(processor)
-//                        .setSampler(sampler)
-//                        .build();
-//            }
+            if (oc.hasTracing()) {
+                var tc = oc.getTracing();
+                var epsilon = 0.00001;
+                var sampler = (tc.getSamplingPercentage() < epsilon)
+                        ? Sampler.alwaysOff()
+                        : (tc.getSamplingPercentage() > (1.0 - epsilon))
+                        ? Sampler.alwaysOn()
+                        : Sampler.traceIdRatioBased(tc.getSamplingPercentage());
+
+                var exporter = OtlpGrpcSpanExporter.builder()
+                        .setCompression("gzip")
+                        .setEndpoint(tc.getEndpointHostname())
+                        .build();
+
+                var processor = tc.getBatching()
+                        ? BatchSpanProcessor.builder(exporter)
+                        .setScheduleDelay(Duration.ofMillis(tc.getExportEveryMillis()))
+                        .build()
+                        : SimpleSpanProcessor.create(exporter);
+
+                ResourceBuilder resource = createOpenTelemetryResource(tc.getResourcesMap());
+
+                tracerProvider = SdkTracerProvider.builder()
+                        .setResource(Resource.getDefault().merge(resource.build()))
+                        .addSpanProcessor(processor)
+                        .setSampler(sampler)
+                        .build();
+            }
 
             if (oc.hasMetrics()) {
                 var mc = oc.getMetrics();
@@ -453,34 +453,34 @@ public class OptionsUtil {
                         .build();
             }
 
-//            var openTelemetry = OpenTelemetrySdk.builder()
-//                    .setTracerProvider(tracerProvider)
-//                    .setMeterProvider(meterProvider)
-//                    .build();
+            var openTelemetry = OpenTelemetrySdk.builder()
+                    .setTracerProvider(tracerProvider)
+                    .setMeterProvider(meterProvider)
+                    .build();
 
-//            if (oc.hasMetrics()) {
-//                final SdkMeterProvider meterProviderForShutdown = meterProvider;
-//                onClusterConnectionClose.add(() -> {
-//                    logger.info("Shutting down meter provider");
-//                    meterProviderForShutdown.forceFlush();
-//                    meterProviderForShutdown.shutdown();
-//                });
-//                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
-//            }
-//            if (oc.hasTracing()) {
-//                // [end]
-//                // [if:3.5.0]
-//                final SdkTracerProvider tracerProviderForShutdown = tracerProvider;
-//                onClusterConnectionClose.add(() -> {
-//                    logger.info("Shutting down tracer provider");
-//                    tracerProviderForShutdown.forceFlush();
-//                    tracerProviderForShutdown.shutdown();
-//                });
-//                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
-//                clusterEnvironment.requestTracer(tracer);
-//                // [end]
-//                // [if:3.2.0]
-//            }
+            if (oc.hasMetrics()) {
+                final SdkMeterProvider meterProviderForShutdown = meterProvider;
+                onClusterConnectionClose.add(() -> {
+                    logger.info("Shutting down meter provider");
+                    meterProviderForShutdown.forceFlush();
+                    meterProviderForShutdown.shutdown();
+                });
+                clusterEnvironment.meter(OpenTelemetryMeter.wrap(openTelemetry));
+            }
+            if (oc.hasTracing()) {
+                // [end]
+                // [if:3.5.0]
+                final SdkTracerProvider tracerProviderForShutdown = tracerProvider;
+                onClusterConnectionClose.add(() -> {
+                    logger.info("Shutting down tracer provider");
+                    tracerProviderForShutdown.forceFlush();
+                    tracerProviderForShutdown.shutdown();
+                });
+                var tracer = OpenTelemetryRequestTracer.wrap(openTelemetry);
+                clusterEnvironment.requestTracer(tracer);
+                // [end]
+                // [if:3.2.0]
+            }
         }
 
         if (oc.getUseNoopTracer()) {

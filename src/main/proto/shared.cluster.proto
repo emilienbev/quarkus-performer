@@ -102,6 +102,50 @@ message ClusterConfig {
     optional int32 app_telemetry_ping_timeout_secs = 34;
 }
 
+message Authenticator {
+    message PasswordAuthenticator {
+        string username = 1;
+        string password = 2;
+    }
+
+    message CertificateAuthenticator {
+        // An X509  certificate in PEM format, e.g.
+        //
+        //-----BEGIN CERTIFICATE-----
+        //MIIDKDCCAhCgAwIBAgIGAYfmPG2mMA0GCSqGSIb3DQEBCwUAMDYxNDAyBgNVBAMT
+        //K2FwcHMuY2xvdWQtbmF0aXZlLmZnMWIucDEub3BlbnNoaWZ0YXBwcy5jb20wHhcN
+        //...
+        //I+VkRC5NwrqMsnR3149LAVcj6Jen8hMjLM0wR8Frqu2zV9HW5yHMQmOTOKE=
+        //-----END CERTIFICATE-----
+        //
+        // The SDK should apply it in whatever way makes sense for it.  Some SDKs (e.g. the C++ wrappers) cannot pass
+        // in such a certificate directly to the SDK.  In this case they should write it to a temporary file first.
+        string cert = 1;
+
+        // An X509 key in PEM format, e.g.
+        //
+        //-----BEGIN RSA PRIVATE KEY-----
+        //MIIJKAIBAAKCAgEAwiYPcb0zL9B5ZCn5mo/sF2QwdNr/aKjdfvnO6hx9h80klu5m
+        //...
+        //QZ57rjd7D6hDSzbSxNW54ktF0ZJrBZatfXJize2/WL1SzSAkm7rJovUWXKA=
+        //-----END RSA PRIVATE KEY-----
+        //
+        // The SDK should apply it in whatever way makes sense for it.  Some SDKs (e.g. the C++ wrappers) cannot pass
+        // in such a certificate directly to the SDK.  In this case they should write it to a temporary file first.
+        string key = 2;
+    }
+
+    message JwtAuthenticator {
+        string jwt = 1;
+    }
+
+    oneof authenticator {
+        PasswordAuthenticator password_auth = 1;
+        CertificateAuthenticator certificate_auth = 2;
+        JwtAuthenticator jwt_auth = 3;
+    }
+}
+
 // Only sent to ExtSDKIntegration-supporting performers.
 // Creates a cluster connection, with an optional cluster & transactions configuration.
 message ClusterConnectionCreateRequest {
@@ -112,8 +156,12 @@ message ClusterConnectionCreateRequest {
     // cluster_hostname is the connection string.  As with all fields (see rule 1 in README.md), the performer should
     // pass this directly to the SDK without manipulation.  E.g. it should not prepend couchbase:// or similar.
     string cluster_hostname = 2;
+
+    // Either these two fields will be set or authenticator will be set, but not both.
+    // These will always be set until the performer returns the SupportsAuthenticator capability.
     string cluster_username = 3;
     string cluster_password = 4;
+
     optional ClusterConfig cluster_config = 5;
 
     // Can apply SDK tunables that can't be represented generically in GRPC.
@@ -128,6 +176,10 @@ message ClusterConnectionCreateRequest {
     //
     // Generally performers can ignore this field unless they are explicitly planning on using it.
     map<string, string> tunables = 6;
+
+    // Either this will be set or username/password will be set, but not both.
+    // These will never be set until the performer returns the SupportsAuthenticator capability.
+    optional Authenticator authenticator = 7;
 }
 
 message ClusterConnectionCreateResponse {

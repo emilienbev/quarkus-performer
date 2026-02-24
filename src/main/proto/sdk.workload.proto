@@ -8,6 +8,7 @@ option ruby_package = "FIT::Protocol::SDK";
 option java_multiple_files = true;
 
 import "shared.bounds.proto";
+import "shared.cluster.proto";
 import "shared.exceptions.proto";
 import "sdk.kv.rangescan.top_level.proto";
 import "sdk.kv.commands.proto";
@@ -50,6 +51,9 @@ message ClusterLevelCommand {
     cluster.eventing_function_manager.Command eventing_function_manager = 6;
 
     sdk.query.Command query = 7;
+
+    // cluster.authenticator()
+    shared.Authenticator authenticator = 9;
   }
 }
 
