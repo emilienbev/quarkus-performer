@@ -13,6 +13,9 @@ if [ -z "$QUARKUS_VERSION" ]; then
   echo "Error: Failed to fetch Quarkus version"
   exit 1
 fi
+
+SDK_VERSION=3.10.1
+QUARKUS_VERSION=3.31.1
 echo "Detected SDK version: $SDK_VERSION"
 echo "Detected Quarkus version: $QUARKUS_VERSION"
 

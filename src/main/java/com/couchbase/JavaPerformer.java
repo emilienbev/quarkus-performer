@@ -135,7 +135,7 @@ public class JavaPerformer extends CorePerformer {
     @Override
     protected void customisePerformerCaps(PerformerCapsFetchResponse.Builder response) {
         response.addAllSdkImplementationCaps(Capabilities.sdkImplementationCaps());
-        var sdkVersion = VersionUtil.introspectSDKVersionJava();
+        var sdkVersion = "3.10.1-quarkus";
         if (sdkVersion == null) {
             // Not entirely clear why this fails sometimes on CI, return something sort of sensible as a default.
             sdkVersion = "3.5.0";
