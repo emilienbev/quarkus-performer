@@ -35,6 +35,15 @@
             <artifactId>quarkus-smallrye-health</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Override proto-google-common-protos to version compatible with protobuf 4.x.
+             The Quarkus BOM 3.31.1 manages proto-google-common-protos:2.63.1 which depends
+             on protobuf-java:3.25.8, but the BOM also provides protobuf-java:4.32.1.
+             This version mismatch causes: DescriptorProtos$FeatureSet missing method getFieldPresence. -->
+        <dependency>
+            <groupId>com.google.api.grpc</groupId>
+            <artifactId>proto-google-common-protos</artifactId>
+            <version>2.66.0</version>
+        </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-grpc</artifactId>

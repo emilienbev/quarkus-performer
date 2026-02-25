@@ -173,7 +173,14 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
         com.couchbase.client.protocol.transactions.UnstagingMode.class,
         com.couchbase.client.protocol.transactions.Workload.class,
         com.couchbase.client.protocol.transactions.WorkloadOrBuilder.class,
-        com.google.protobuf.GeneratedMessageV3.class
+        com.google.protobuf.GeneratedMessageV3.class,
+        // protobuf 4.x renamed GeneratedMessageV3 -> GeneratedMessage; DescriptorProtos$FeatureSet
+        // (and its nested enum/message types) extend GeneratedMessage in 4.x and their accessor
+        // tables use Class.getMethod() / Method.invoke() at runtime to look up field accessors
+        // (e.g. getFieldPresence()).  Without these registrations GraalVM prunes those methods and
+        // protobuf throws "Generated message class ... missing method getFieldPresence" at runtime.
+        com.google.protobuf.GeneratedMessage.class,
+        com.google.protobuf.DescriptorProtos.FeatureSet.class
 })
 public class ReflectionProcessing {
 }
